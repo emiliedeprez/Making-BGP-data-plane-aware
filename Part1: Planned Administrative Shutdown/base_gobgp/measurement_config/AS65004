@@ -1,0 +1,17 @@
+[global.config]
+  as = 65004
+  router-id = "192.168.1.4"
+
+[global.apply-policy.config]
+	default-import-policy = "accept-route"
+	default-export-policy = "accept-route"
+  
+[[neighbors]]
+  [neighbors.config]
+    neighbor-address = "10.0.0.4"
+    peer-as = 65001
+
+[[mrt-dump]]
+  [mrt-dump.config]
+    dump-type = "updates"
+    file-name = "/dump/ASfour_updates.dump"

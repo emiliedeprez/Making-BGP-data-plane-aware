@@ -1,0 +1,123 @@
+name: BGP_topo
+
+topology:
+    nodes:
+        as65001:
+            kind: linux
+            image: gobgp_rqm:1.0
+            mgmt_ipv4: 172.20.20.11
+            env: 
+                CONFIG: config_measurement/AS65001
+            binds:
+                - dump:/dump
+            exec:
+                - ip address add 10.0.0.2/31 dev eth1
+                - ip address add 10.0.0.4/31 dev eth2
+
+                - ip address add 192.168.0.3/31 dev eth3
+                - ip link add blue type vrf table 10
+                - ip link set dev blue up
+                - ip link set dev eth3 master blue
+                - ip rule add iif eth3 table 10
+                - ip rule add oif eth3 table 10
+
+                - ip address add 192.168.1.3/31 dev eth4
+                - ip link add red type vrf table 20
+                - ip link set dev red up
+                - ip link set dev eth4 master red
+                - ip rule add iif eth4 table 20
+                - ip rule add oif eth4 table 20
+                - tc qdisc add dev eth3 root netem delay 10ms 1ms
+                - tc qdisc add dev eth4 root netem delay 10ms 1ms
+
+                - ip address add 10.0.0.6/31 dev eth5
+
+        provider1:
+            kind: linux
+            image: provider1:latest
+            mgmt_ipv4: 172.20.20.12
+            env:
+                PREFIXES: 10000_prefixes.txt
+            exec:
+                - ip address add 10.0.0.3/31 dev eth1
+                - tc qdisc add dev eth1 root netem delay 5ms 1ms
+        provider2:
+            kind: linux
+            image: provider2:latest
+            mgmt_ipv4: 172.20.20.13
+            env:
+                PREFIXES: 10000_prefixes.txt
+            exec:
+                - ip address add 10.0.0.5/31 dev eth1
+                - tc qdisc add dev eth1 root netem delay 5ms 1ms
+        as65004:
+            kind: linux
+            image: gobgp_rqm:1.0
+            mgmt_ipv4: 172.20.20.18
+            env: 
+                CONFIG: config_measurement/AS65004
+            binds:
+                - dump:/dump
+            exec:
+                - ip address add 10.0.0.7/31 dev eth1
+
+        host1:
+            kind: linux
+            image: host:latest
+            mgmt_ipv4: 172.20.20.14
+            exec:
+                - ip address add 192.168.0.2/31 dev eth1
+                - ip address add 192.168.2.3/31 dev eth2
+                - ip address add 110.0.0.0/16 dev lo
+                - ip route add 192.168.1.2/31 via 192.168.2.2
+                - ip route add 192.168.2.4/31 via 192.168.2.2
+                - ip route add 120.0.0.0/16 via 192.168.2.2
+                - ip route add 130.0.0.0/16 via 192.168.2.2
+                - tc qdisc add dev eth1 root netem delay 10ms 1ms
+                - tc qdisc add dev eth2 root netem delay 10ms 1ms
+        host2:
+            kind: linux
+            image: host:latest
+            mgmt_ipv4: 172.20.20.15
+            exec:
+                - ip address add 192.168.2.2/31 dev eth1
+                - ip address add 192.168.2.4/31 dev eth2
+                - ip address add 120.0.0.0/16 dev lo
+                - ip route add 192.168.1.2/31 via 192.168.2.5
+                - ip route add 192.168.0.2/31 via 192.168.2.3
+                - ip route add 110.0.0.0/16 via 192.168.2.3
+                - ip route add 130.0.0.0/16 via 192.168.2.5
+                - tc qdisc add dev eth1 root netem delay 10ms 1ms
+                - tc qdisc add dev eth2 root netem delay 10ms 1ms
+        host3:
+            kind: linux
+            image: host:latest
+            mgmt_ipv4: 172.20.20.16
+            exec:
+                - ip address add 192.168.1.2/31 dev eth1
+                - ip address add 192.168.2.5/31 dev eth2
+                - ip address add 130.0.0.0/16 dev lo
+                - ip route add 192.168.0.2/31 via 192.168.2.4     
+                - ip route add 192.168.2.2/31 via 192.168.2.4
+                - ip route add 110.0.0.0/16 via 192.168.2.4   
+                - ip route add 120.0.0.0/16 via 192.168.2.4   
+                - tc qdisc add dev eth1 root netem delay 10ms 1ms
+                - tc qdisc add dev eth2 root netem delay 10ms 1ms
+
+        RPKI:
+            kind: linux
+            image: gortr:1.0
+            mgmt_ipv4: 172.20.20.17
+            env: 
+                CONFIG: rpki_cache_10000.json
+            ports:
+                - 8323:8323
+    links:
+        - endpoints: ["as65001:eth1", "provider1:eth1"]
+        - endpoints: ["as65001:eth2", "provider2:eth1"]
+        - endpoints: ["as65001:eth3", "host1:eth1"]
+        - endpoints: ["as65001:eth4", "host3:eth1"]
+        - endpoints: ["as65001:eth5", "as65004:eth1"]
+        - endpoints: ["host1:eth2", "host2:eth1"]
+        - endpoints: ["host2:eth2", "host3:eth2"]
+        

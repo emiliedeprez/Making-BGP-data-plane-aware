@@ -1,0 +1,13 @@
+server:
+  port: 4
+  address: 127.0.0.1
+  WorkingTreads: 10
+  alpha: 0.005
+  MaxNumberMeasurement: 3
+neighbors:
+  - "10.0.0.3":
+      MeasurementAddress: "192.168.0.2"
+      VRF: "blue"
+  - "10.0.0.5":
+      MeasurementAddress: "192.168.1.2"
+      VRF: "red"

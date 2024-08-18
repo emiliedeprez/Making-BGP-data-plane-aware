@@ -1,0 +1,6 @@
+To create measurement
+
+1. Build the docker: `docker build . -t rqm_measurement`.
+2. Create the directory `measurement_results` where the container will be launched.
+3. Launch the container: `docker run -v ./measurement_results/:/app/measurement_results/ -d rqm_measurement:latest`.
+The resutls are available in the folder measurement_results when the docker stops

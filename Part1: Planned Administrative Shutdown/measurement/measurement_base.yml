@@ -1,0 +1,95 @@
+name: BGP_topo
+
+topology:
+    nodes:
+        as65001r1:
+            kind: linux
+            image: gobgp:1.0
+            binds:
+                - dump:/dump
+            env: 
+                CONFIG: measurement_config/AS65001R1
+                PCAP: as65001r1.pcap
+            exec:
+                - ip address add 10.0.0.3/31 dev eth1
+                - ip address add 10.0.0.6/31 dev eth2
+                - ip address add 10.0.0.4/31 dev eth3
+                - ip address add 192.168.0.1/32 dev lo
+                - ip route add 192.168.0.2/32 dev eth2
+                - ip route add 192.168.0.3/32 dev eth2
+                - ip route add 10.0.0.8/31 dev eth2
+                - tc qdisc add dev eth1 root netem delay 20ms
+                - tc qdisc add dev eth2 root netem delay 20ms
+                - tc qdisc add dev eth3 root netem delay 20ms
+        as65001rr1:
+            kind: linux
+            image: gobgp:1.0
+            binds:
+                - dump:/dump
+            env: 
+                CONFIG: measurement_config/AS65001RR1
+                PCAP: as65001rr1.pcap
+            exec:
+                - ip address add 10.0.0.7/31 dev eth1
+                - ip address add 10.0.0.8/31 dev eth2
+                - ip address add 192.168.0.2/32 dev lo
+                - ip route add 192.168.0.1/32 dev eth1
+                - ip route add 192.168.0.3/32 dev eth2
+                - tc qdisc add dev eth1 root netem delay 20ms
+                - tc qdisc add dev eth2 root netem delay 20ms
+        as65001r2:
+            kind: linux
+            image: gobgp:1.0
+            binds:
+                - dump:/dump
+            env: 
+                CONFIG: measurement_config/AS65001R2
+                PCAP: as65001r2.pcap
+            exec:
+                - ip address add 10.0.0.9/31 dev eth1
+                - ip address add 10.0.0.11/31 dev eth2
+                - ip address add 192.168.0.1/32 dev lo
+                - ip route add 192.168.0.1/32 dev eth1
+                - ip route add 192.168.0.2/32 dev eth1
+                - ip route add 10.0.0.6/31 dev eth1
+                - tc qdisc add dev eth1 root netem delay 20ms
+                - tc qdisc add dev eth2 root netem delay 20ms
+        as65002:
+            kind: linux
+            image: provider_1:latest
+            binds:
+                - dump:/dump
+            env:
+                PREFIXES: 1000_prefixes.txt
+            exec:
+                - ip address add 10.0.0.2/31 dev eth1
+                - tc qdisc add dev eth1 root netem delay 20ms
+        as65003:
+            kind: linux
+            image: provider_2:latest
+            binds:
+                - dump:/dump
+            env:
+                PREFIXES: 1000_prefixes.txt
+            exec:
+                - ip address add 10.0.0.10/31 dev eth1
+                - tc qdisc add dev eth1 root netem delay 20ms
+        as65004:
+            kind: linux
+            image: gobgp:1.0
+            env: 
+                CONFIG: measurement_config/AS65004
+                PCAP: as65004.pcap
+            binds:
+                - dump:/dump
+            exec:
+                - ip address add 10.0.0.5/31 dev eth1
+                - tc qdisc add dev eth1 root netem delay 20ms
+
+    links:
+        - endpoints: ["as65001r1:eth1", "as65002:eth1"]
+        - endpoints: ["as65001r1:eth2", "as65001rr1:eth1"]
+        - endpoints: ["as65001r1:eth3", "as65004:eth1"]
+        - endpoints: ["as65001rr1:eth2", "as65001r2:eth1"]
+        - endpoints: ["as65001r2:eth2", "as65003:eth1"]
+

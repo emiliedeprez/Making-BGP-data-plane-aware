@@ -1,0 +1,21 @@
+[global.config]
+	as = 65003
+	router-id = "192.168.0.3"
+
+[global.apply-policy.config]
+	default-import-policy = "accept-route"
+	default-export-policy = "accept-route"
+  
+[[neighbors]]
+	[neighbors.config]
+		peer-as = 65001
+		local-as = 65003
+		neighbor-address = "10.0.0.4"
+
+
+[zebra]
+	[zebra.config]
+		enabled = true
+		url = "unix:/var/run/frr/zserv.api"
+		redistribute-route-type-list = []
+		version = 6

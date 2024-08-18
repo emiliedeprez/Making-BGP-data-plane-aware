@@ -1,0 +1,76 @@
+[global.config]
+  as = 65001
+  router-id = "192.168.0.3"
+  [global.config.local-pref-0]
+    local-pref-0-timer = 10000
+    local-pref-0-community = "65535:65285"
+
+[global.apply-policy.config]
+	import-policy-list = ["import-from-provider"]
+  export-policy-list = ["export-to-provider"]
+	default-import-policy = "accept-route"
+	default-export-policy = "accept-route"
+  
+[[neighbors]]
+  [neighbors.config]
+    neighbor-address = "10.0.0.8"
+    peer-as = 65001
+
+[[neighbors]]
+  [neighbors.config]
+    neighbor-address = "10.0.0.10"
+    peer-as = 65003
+  
+[[policy-definitions]]
+    name = "import-from-provider"
+    [[policy-definitions.statements]]
+      name = "import-from-provider-actions"
+      [policy-definitions.statements.conditions.match-neighbor-set]
+        neighbor-set = "provider-set"
+        match-set-options = "any"
+      [policy-definitions.statements.actions.bgp-actions]
+        set-local-pref = 50
+      [policy-definitions.statements.actions.bgp-actions.set-community]
+        options = "ADD"
+      [policy-definitions.statements.actions.bgp-actions.set-community.set-community-method]
+        communities-list = ["65001:10"]
+
+[[policy-definitions]]
+    name = "export-to-provider"
+    [[policy-definitions.statements]]
+      name = "export-to-provider-actions-reject"
+      [policy-definitions.statements.conditions.bgp-conditions.match-community-set]
+          community-set = "provider"
+          match-set-options = "any"
+      [policy-definitions.statements.conditions.match-neighbor-set]
+        neighbor-set = "provider-set"
+        match-set-options = "any"
+      [policy-definitions.statements.actions]
+        route-disposition = "reject-route"
+
+    [[policy-definitions.statements]]
+      name = "export-to-provider-actions-update-route"
+        [policy-definitions.statements.conditions.match-neighbor-set]
+          neighbor-set = "provider-set"
+          match-set-options = "any"
+        [policy-definitions.statements.conditions.bgp-conditions.match-community-set]
+          community-set = "provider"
+          match-set-options = "invert"
+      [policy-definitions.statements.actions.bgp-actions.set-community]
+        options = "remove"
+      [policy-definitions.statements.actions.bgp-actions.set-community.set-community-method]
+        communities-list = ["65001:10", "65001:20"]
+
+
+
+
+
+
+[[defined-sets.bgp-defined-sets.community-sets]]
+  community-set-name = "provider"
+  community-list = ["65001:10"]
+
+
+[[defined-sets.neighbor-sets]]
+  neighbor-set-name = "provider-set"
+   neighbor-info-list = ["10.0.0.10"]

@@ -1,0 +1,26 @@
+[global.config]
+	as = 65004
+	router-id = "192.168.0.4"
+
+[global.apply-policy.config]
+	default-import-policy = "accept-route"
+	default-export-policy = "accept-route"
+  
+[[neighbors]]
+	[neighbors.config]
+		peer-as = 65001
+		local-as = 65004
+		neighbor-address = "10.0.0.6"
+
+
+[zebra]
+	[zebra.config]
+		enabled = true
+		url = "unix:/var/run/frr/zserv.api"
+		redistribute-route-type-list = []
+		version = 6
+
+[[mrt-dump]]
+  [mrt-dump.config]
+    dump-type = "updates"
+    file-name = "/dump/listenerupdates.dump"

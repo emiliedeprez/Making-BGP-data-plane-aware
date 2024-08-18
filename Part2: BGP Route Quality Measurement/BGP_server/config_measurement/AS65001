@@ -1,0 +1,108 @@
+[global.config]
+	as = 65001
+	router-id = "192.168.0.1"
+
+[global.apply-policy.config]
+	import-policy-list = ["add-community-policy", "add-measurement-policy"]
+	export-policy-list = ["export-policy-as65004"]
+	default-import-policy = "accept-route"
+	default-export-policy = "reject-route"
+
+[[neighbors]]
+	[neighbors.config]
+		peer-as = 65002
+		local-as = 65001
+		neighbor-address = "10.0.0.3"
+  
+[[neighbors]]
+	[neighbors.config]
+		peer-as = 65003
+		local-as = 65001
+		neighbor-address = "10.0.0.5"
+
+[[neighbors]]
+	[neighbors.config]
+		peer-as = 65004
+		local-as = 65001
+		neighbor-address = "10.0.0.7"
+
+[[rpki-servers]]
+  [rpki-servers.config]
+    address = "172.20.20.17"
+    port = 8323
+
+[[rqm-server]]
+  [rqm-server.config]
+	address = "127.0.0.1"
+    port = 4
+	[[rqm-server.rule]]
+		time-limit = 100
+		community = "65001:100"
+		sampling-interval = 300000
+	[[rqm-server.rule]]
+		time-limit = 0
+		community = "65002:100"
+		sampling-interval = 300000
+
+[[policy-definitions]]
+  name = "add-community-policy"
+  [[policy-definitions.statements]]
+    name = "add-community-local-pref"
+		[policy-definitions.statements.conditions.bgp-conditions.match-community-set]
+          community-set = "provider"
+          match-set-options = "invert"
+        [policy-definitions.statements.actions.bgp-actions.set-community]
+        options = "add"
+        [policy-definitions.statements.actions.bgp-actions.set-community.set-community-method]
+        communities-list = ["65000:10"]
+
+[[policy-definitions]]
+  name = "export-policy-as65004"
+  [[policy-definitions.statements]]
+    name = "export-to-as65004"
+		[policy-definitions.statements.conditions.match-neighbor-set]
+          neighbor-set = "as65004"
+          match-set-options = "any"
+		[policy-definitions.statements.actions]
+        route-disposition = "accept-route"
+        
+
+[[policy-definitions]]
+  name = "add-measurement-policy"
+  [[policy-definitions.statements]]
+    name = "add-measurement-community"
+		[policy-definitions.statements.conditions.bgp-conditions.match-community-set]
+          community-set = "measurement-community"
+          match-set-options = "invert"
+        [policy-definitions.statements.actions.bgp-actions.set-community]
+        options = "add"
+        [policy-definitions.statements.actions.bgp-actions.set-community.set-community-method]
+        communities-list = ["65002:100"]
+
+
+
+[zebra]
+	[zebra.config]
+		enabled = true
+		url = "unix:/var/run/frr/zserv.api"
+		redistribute-route-type-list = []
+		version = 6
+
+[[defined-sets.bgp-defined-sets.community-sets]]
+  community-set-name = "provider"
+  community-list = ["65000:10"]
+
+
+[[defined-sets.bgp-defined-sets.community-sets]]
+  community-set-name = "measurement-community"
+  community-list = ["65001:100","65002:100"]
+
+[[defined-sets.neighbor-sets]]
+  neighbor-set-name = "as65004"
+  neighbor-info-list = ["10.0.0.7"]
+
+
+[[mrt-dump]]
+  [mrt-dump.config]
+    dump-type = "updates"
+    file-name = "/dump/peerupdates.dump"
